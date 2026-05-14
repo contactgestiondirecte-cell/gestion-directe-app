@@ -1,56 +1,183 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <title>Gestion Directe — Admin Master</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        :root { --bg: #0f172a; --card: #1e293b; --primary: #6366f1; --success: #10b981; --warning: #f59e0b; --text: #f8fafc; }
-        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; min-height: 100vh; }
-        nav { width: 260px; background: var(--card); padding: 25px; border-right: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; }
-        main { flex: 1; padding: 40px; overflow-y: auto; }
-        .card { background: var(--card); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { text-align: left; padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .status { padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
-        .btn-act { border: none; padding: 8px 15px; border-radius: 8px; color: white; cursor: pointer; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Signaler un problème — Gestion Directe</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Serif+Display:ital@0;1&display=swap');
+:root { --cream: #faf7f2; --cream-dark: #f2ece0; --navy: #0e2140; --navy-mid: #1a3a6b; --navy-soft: #2558a8; --gold: #c9963a; --gold-light: #f0c060; --text: #1a2332; --text-mid: #3d4f66; --muted: #8896a8; --border: #e0d8cc; --border-mid: #c8bfb0; --white: #ffffff; --success: #1a7a52; --error: #c0322a; --urg-h: #c0322a; --urg-m: #b06020; --urg-l: #1a7a52; }
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+.header { background: var(--navy); padding: 18px 20px 20px; position: relative; overflow: hidden; }
+.header::after { content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 24px; background: var(--cream); border-radius: 24px 24px 0 0; }
+.header-inner { position: relative; z-index: 1; }
+.brand { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+.brand-mark { width: 34px; height: 34px; background: var(--gold); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 16px; color: white; font-weight: bold; }
+.brand-name { font-size: 15px; font-weight: 700; color: white; }
+.header-title { font-family: 'DM Serif Display', serif; font-size: 26px; color: white; line-height: 1.15; }
+.building-chip { display: inline-flex; align-items: center; gap: 6px; background: rgba(201,150,58,0.18); border: 1px solid rgba(201,150,58,0.3); border-radius: 100px; padding: 5px 12px; font-size: 12px; font-weight: 600; color: var(--gold-light); margin-top: 10px; }
+.chip-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); animation: blink 2s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+.progress-wrap { background: var(--cream); padding: 18px 20px 0; }
+.step-track { display: flex; align-items: center; }
+.step-node { flex: 1; display: flex; flex-direction: column; align-items: center; position: relative; }
+.step-node::after { content: ''; position: absolute; top: 12px; left: calc(50% + 12px); right: calc(-50% + 12px); height: 1.5px; background: var(--border-mid); }
+.step-node:last-child::after { display: none; }
+.step-node.done::after { background: var(--navy-soft); }
+.sn-circle { width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--border-mid); background: var(--cream); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: var(--muted); z-index: 1; }
+.step-node.active .sn-circle { background: var(--navy); border-color: var(--navy); color: white; }
+.sn-label { font-size: 9px; font-weight: 600; text-transform: uppercase; color: var(--muted); margin-top: 5px; }
+.section { display: none; padding: 20px 20px 0; animation: up 0.3s ease; }
+.section.active { display: block; }
+@keyframes up { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+.section-title { font-family: 'DM Serif Display', serif; font-size: 21px; color: var(--navy); margin-bottom: 4px; }
+.section-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+.zone-grid, .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.cat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.picker-card, .cat-card { border: 1.5px solid var(--border); border-radius: 12px; padding: 14px 8px; background: var(--white); text-align: center; cursor: pointer; transition: 0.2s; }
+.picker-card.sel, .cat-card.sel { border-color: var(--navy); background: var(--navy); color: white; }
+.picker-label, .cat-label { font-size: 9.5px; font-weight: 700; text-transform: uppercase; margin-top: 6px; }
+.field { margin-bottom: 15px; }
+.field label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 6px; color: var(--text-mid); }
+.field input, .field textarea { width: 100%; border: 1.5px solid var(--border); border-radius: 10px; padding: 13px; font-family: inherit; font-size: 15px; outline: none; background: white; }
+.grid-err, .field-err { display: none; color: var(--error); font-size: 11px; font-weight: 600; margin-top: 5px; padding: 6px; background: #fff5f5; border-radius: 4px; }
+.show { display: block; }
+.nav-wrap { padding: 20px; display: flex; gap: 10px; }
+.btn { flex: 1; padding: 16px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.btn-primary { background: var(--navy); color: white; }
+.btn-back { background: white; border: 1.5px solid var(--border); color: var(--muted); flex: 0 0 55px; }
+.btn-send { background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%); color: var(--navy); }
+.summary { border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: white; }
+.sum-row { display: flex; padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 13px; }
+.sum-k { width: 95px; font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+.sum-v { font-weight: 600; color: var(--navy); flex: 1; }
+.urg-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.urg-card { border: 1.5px solid var(--border); border-radius: 12px; padding: 12px; text-align: center; cursor: pointer; background: var(--white); }
+.urg-dot { width: 10px; height: 10px; border-radius: 50%; display: block; margin: 0 auto 5px; }
+.urg-card.sel[data-u="Faible"] { border-color: var(--urg-l); background: #f0f9f5; }
+.urg-card.sel[data-u="Modéré"] { border-color: var(--urg-m); background: #fff9f2; }
+.urg-card.sel[data-u="Urgent"] { border-color: var(--urg-h); background: #fff5f5; }
+</style>
 </head>
 <body>
-    <nav>
-        <h2 style="color:var(--primary)">Gestion Directe</h2>
-        <p style="color:#64748b; font-size:0.8rem;">ADMINISTRATION</p>
-    </nav>
-    <main>
-        <div class="card">
-            <h3>Interventions en cours</h3>
-            <table id="table-inter">
-                <thead><tr><th>Immeuble</th><th>Type</th><th>Statut</th><th>Action</th></tr></thead>
-                <tbody></tbody>
-            </table>
-        </div>
-    </main>
-
-    <script>
-        const supabaseUrl = 'https://nyowrqutvwrgpcwvyeup.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im55b3dycXV0dndyZ3Bjd3Z5ZXVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MDE1MzUsImV4cCI6MjA5NDA3NzUzNX0.fl3MNDrEJOpH5JMHvKCJQDNfQZ1V4sZKEPWUai8MKf8';
-        const _sb = supabase.createClient(supabaseUrl, supabaseKey);
-
-        async function fetchData() {
-            const { data, error } = await _sb.from('interventions').select('*').order('created_at', { ascending: false });
-            if (error) console.log("Erreur:", error);
-            const tbody = document.querySelector('#table-inter tbody');
-            tbody.innerHTML = (data || []).map(item => `
-                <tr>
-                    <td>${item.immeuble}</td>
-                    <td>${item.type_travaux}</td>
-                    <td><span class="status" style="background:var(--primary)">${item.statut || 'Nouveau'}</span></td>
-                    <td><button class="btn-act" style="background:var(--primary)" onclick="alert('${item.description}')">Détails</button></td>
-                </tr>
-            `).join('');
-        }
-        fetchData();
-    </script>
+<div class="header">
+  <div class="header-inner">
+    <div class="brand"><div class="brand-mark">GD</div><div><div class="brand-name">Gestion Directe</div></div></div>
+    <div class="header-title">Signalez un<br><em>problème</em></div>
+    <div class="building-chip"><span class="chip-dot"></span><span id="building-name">Chargement...</span></div>
+  </div>
+</div>
+<div class="progress-wrap">
+  <div class="step-track">
+    <div class="step-node active" id="sn1"><div class="sn-circle">1</div><div class="sn-label">Lieu</div></div>
+    <div class="step-node" id="sn2"><div class="sn-circle">2</div><div class="sn-label">Souci</div></div>
+    <div class="step-node" id="sn3"><div class="sn-circle">3</div><div class="sn-label">Contact</div></div>
+    <div class="step-node" id="sn4"><div class="sn-circle">4</div><div class="sn-label">Fin</div></div>
+  </div>
+</div>
+<div class="section active" id="s1">
+  <div class="section-title">Où est le problème ?</div>
+  <div class="section-sub">Précisez la zone et l'étage.</div>
+  <div class="zone-grid">
+    <div class="picker-card" onclick="pick('zone',this,'Parties communes')">🏢<div class="picker-label">Commun</div></div>
+    <div class="picker-card" onclick="pick('zone',this,'Appartement')">🏠<div class="picker-label">Appartement</div></div>
+    <div class="picker-card" onclick="pick('zone',this,'Parking / Cave')">🚗<div class="picker-label">Parking</div></div>
+    <div class="picker-card" onclick="pick('zone',this,'Extérieur')">🌳<div class="picker-label">Extérieur</div></div>
+  </div>
+  <div class="grid-err" id="err-zone">Merci de choisir une zone.</div>
+  <div class="field" style="margin-top:15px"><label>Étage concerné</label><input type="text" id="etage_lieu" placeholder="Ex: RDC, 3ème étage..."></div>
+</div>
+<div class="section" id="s2">
+  <div class="section-title">Nature du problème</div>
+  <div class="cat-grid">
+    <div class="cat-card" onclick="pick('cat',this,'Plomberie')">💧<div class="cat-label">Plomb.</div></div>
+    <div class="cat-card" onclick="pick('cat',this,'Électricité')">⚡<div class="cat-label">Élec.</div></div>
+    <div class="cat-card" onclick="pick('cat',this,'Chauffage')">🔥<div class="cat-label">Chauff.</div></div>
+    <div class="cat-card" onclick="pick('cat',this,'Ascenseur')">🛗<div class="cat-label">Ascen.</div></div>
+    <div class="cat-card" onclick="pick('cat',this,'Porte / Accès')">🔑<div class="cat-label">Accès</div></div>
+    <div class="cat-card" onclick="pick('cat',this,'Interphone')">📞<div class="cat-label">Inter.</div></div>
+  </div>
+  <div class="grid-err" id="err-cat">Choisissez une catégorie.</div>
+  <div class="field" style="margin-top:20px"><label>Urgence</label>
+    <div class="urg-row">
+      <div class="urg-card" data-u="Faible" onclick="pickUrg(this)"><span class="urg-dot" style="background:var(--urg-l)"></span><div class="cat-label">Faible</div></div>
+      <div class="urg-card sel" data-u="Modéré" onclick="pickUrg(this)"><span class="urg-dot" style="background:var(--urg-m)"></span><div class="cat-label">Modéré</div></div>
+      <div class="urg-card" data-u="Urgent" onclick="pickUrg(this)"><span class="urg-dot" style="background:var(--urg-h)"></span><div class="cat-label">Urgent</div></div>
+    </div>
+  </div>
+  <div class="field"><label>Description</label><textarea id="desc" rows="2" placeholder="Détails du problème..."></textarea><div class="field-err" id="err-desc">Merci de décrire le souci.</div></div>
+</div>
+<div class="section" id="s3">
+  <div class="section-title">Vos coordonnées</div>
+  <div class="field"><label>Vous êtes :</label>
+    <div class="role-grid">
+      <div class="picker-card" onclick="pick('role',this,'Locataire')">🔑<div class="picker-label">Locataire</div></div>
+      <div class="picker-card" onclick="pick('role',this,'Propriétaire')">🏠<div class="picker-label">Propriétaire</div></div>
+    </div>
+    <div class="grid-err" id="err-role">Veuillez préciser votre profil.</div>
+  </div>
+  <div class="field"><label>Prénom & Nom</label><input type="text" id="fullname" placeholder="Jean Dupont"></div>
+  <div class="field"><label>Téléphone</label><input type="tel" id="tel" placeholder="06 00 00 00 00"></div>
+</div>
+<div class="section" id="s4"><div class="section-title">Vérification</div><div class="summary" id="summary"></div></div>
+<div class="section" id="s5" style="text-align:center; padding:40px 0;">
+    <div style="width:70px; height:70px; background:var(--success); color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20px; font-size:30px;">✓</div>
+    <h2 style="font-family:'DM Serif Display'; font-size: 24px; color: var(--navy)">Signalement reçu</h2>
+    <button class="btn btn-primary" style="margin: 30px auto 0;" onclick="location.reload()">Retour</button>
+</div>
+<div class="nav-wrap" id="nav-wrap">
+  <button class="btn btn-back" id="btn-back" onclick="prev()" style="display:none">←</button>
+  <button class="btn btn-primary" id="btn-next" onclick="next()">Continuer</button>
+</div>
+<script>
+const supabaseUrl = 'https://nyowrqutvwrgpcwvyeup.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im55b3dycXV0dndyZ3Bjd3Z5ZXVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MDE1MzUsImV4cCI6MjA5NDA3NzUzNX0.fl3MNDrEJOpH5JMHvKCJQDNfQZ1V4sZKEPWUai8MKf8';
+const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+const params = new URLSearchParams(window.location.search);
+const bName = params.get('id');
+document.getElementById('building-name').textContent = bName ? bName.replace(/-/g, ' ') : "Immeuble Standard";
+let step = 1; let data = { zone: '', cat: '', urg: 'Modéré', role: '' };
+function pick(k, el, v) { el.parentElement.querySelectorAll('.picker-card, .cat-card').forEach(c => c.classList.remove('sel')); el.classList.add('sel'); data[k] = v; }
+function pickUrg(el) { document.querySelectorAll('.urg-card').forEach(c => c.classList.remove('sel')); el.classList.add('sel'); data.urg = el.dataset.u; }
+function validate() {
+  document.querySelectorAll('.grid-err, .field-err').forEach(e => e.classList.remove('show'));
+  if(step === 1 && !data.zone) { document.getElementById('err-zone').classList.add('show'); return false; }
+  if(step === 2 && (!data.cat || !document.getElementById('desc').value.trim())) { 
+      if(!data.cat) document.getElementById('err-cat').classList.add('show');
+      if(!document.getElementById('desc').value.trim()) document.getElementById('err-desc').classList.add('show');
+      return false; 
+  }
+  if(step === 3 && (!data.role || !document.getElementById('fullname').value || !document.getElementById('tel').value)) {
+      if(!data.role) document.getElementById('err-role').classList.add('show');
+      document.getElementById('err-contact').classList.add('show'); return false;
+  }
+  return true;
+}
+function next() {
+  if(!validate()) return;
+  if(step === 3) {
+    const rows = [['Immeuble', document.getElementById('building-name').textContent],['Lieu', data.zone],['Catégorie', data.cat],['Urgence', data.urg],['Contact', document.getElementById('fullname').value]];
+    document.getElementById('summary').innerHTML = rows.map(r => `<div class="sum-row"><div class="sum-k">${r[0]}</div><div class="sum-v">${r[1]}</div></div>`).join('');
+  }
+  if(step === 4) { send(); return; }
+  step++; showStep();
+}
+function prev() { step--; showStep(); }
+function showStep() {
+  document.querySelectorAll('.section').forEach((s, i) => s.classList.toggle('active', i + 1 === step));
+  document.querySelectorAll('.step-node').forEach((n, i) => { n.classList.toggle('active', i + 1 === step); n.classList.toggle('done', i + 1 < step); });
+  document.getElementById('btn-back').style.display = step > 1 && step < 5 ? 'flex' : 'none';
+  document.getElementById('btn-next').textContent = step === 4 ? 'Confirmer' : 'Continuer';
+}
+async function send() {
+  const btn = document.getElementById('btn-next'); btn.disabled = true; btn.textContent = "Envoi...";
+  const finalDesc = `[${data.role}] ZONE: ${data.zone} | ETAGE: ${document.getElementById('etage_lieu').value} | URG: ${data.urg} | DESC: ${document.getElementById('desc').value} | TEL: ${document.getElementById('tel').value}`;
+  const { error } = await _supabase.from('interventions').insert([{ immeuble: document.getElementById('building-name').textContent, type_travaux: data.cat, description: finalDesc, statut: 'Nouveau' }]);
+  if(!error) { step = 5; showStep(); document.getElementById('nav-wrap').style.display = 'none'; }
+  else { alert("Erreur de connexion"); btn.disabled = false; }
+}
+</script>
 </body>
 </html>
