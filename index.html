@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Signaler un problème — Gestion Directe</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+    body { font-family: 'DM Sans', sans-serif; background: #faf7f2; padding: 20px; }
+    .container { max-width: 500px; margin: 0 auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+    h1 { color: #0e2140; }
+    input, select, textarea { width: 100%; padding: 12px; margin-top: 10px; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; }
+    button { background: #0e2140; color: white; border: none; width: 100%; padding: 15px; border-radius: 10px; margin-top: 20px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="container">
+    <h1>Signalement d'incident</h1>
+    <form id="incident-form">
+        <label>Votre nom</label>
+        <input type="text" id="fullname" required>
+        <label>Type de problème</label>
+        <select id="cat"><option>Plomberie</option><option>Électricité</option><option>Serrurerie</option><option>Autre</option></select>
+        <label>Description</label>
+        <textarea id="desc" rows="4" required></textarea>
+        <button type="submit" id="submit-btn">Envoyer</button>
+    </form>
+</div>
+
+<script>
+    const supabaseUrl = 'https://nyowrqutvwrgpcwvyeup.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im55b3dycXV0dndyZ3Bjd3Z5ZXVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MDE1MzUsImV4cCI6MjA5NDA3NzUzNX0.fl3MNDrEJOpH5JMHvKCJQDNfQZ1V4sZKEPWUai8MKf8';
+    const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+    document.getElementById('incident-form').onsubmit = async (e) => {
+        e.preventDefault();
+        const { error } = await _supabase.from('interventions').insert([{
+            immeuble: "Résidence Gestion Directe",
+            type_travaux: document.getElementById('cat').value,
+            description: document.getElementById('desc').value,
+            statut: 'Nouveau'
+        }]);
+
+        if (error) alert("Erreur : " + error.message);
+        else { alert("Bien reçu !"); window.location.reload(); }
+    };
+</script>
+</body>
+</html>
